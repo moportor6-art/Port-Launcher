@@ -105,3 +105,7 @@ dialog#modal::backdrop { background: rgba(5, 4, 10, .7); }
 .tenue { color: var(--tenue); }
 .pie-nota { font-size: 12px; margin-top: 10px; }
 .m-acciones { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 14px; }
+
+.aj-fila { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--borde); cursor: pointer; }
+.aj-fila input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--acento); flex: none; }
+.aj-perm { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 0; }

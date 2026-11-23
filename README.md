@@ -8,7 +8,7 @@ Un solo lugar para instalar y abrir los ports de moportor6, en **Android** y en 
 | PokéDive | ✅ | ✅ |
 | DB Survivors | ✅ | ✅ |
 | PokéSurvivor | ✅ | ✅ |
-| PokéBonk / PokéBonk Lite | ✅ | ✅ |
+| PokéBonk Lite | ✅ | ✅ |
 | Pokémon Overlord | ✅ | ✅ |
 
 ## Cómo funciona
@@ -29,6 +29,11 @@ Un solo lugar para instalar y abrir los ports de moportor6, en **Android** y en 
 - **Actualizaciones de los juegos:** cada tarjeta dice qué versión tienes y cuál es la nueva; «Novedades» enseña las
   notas de todas las versiones que te faltan (las de GitHub) y desde ahí se actualiza. Arriba, «Actualizar N juegos»
   los pone todos al día de una vez. En Android, abrir el juego también vale: su actualizador baja solo lo que cambió.
+- **Actualizaciones automáticas, como la Play Store** (⚙ Ajustes, activadas de serie): al abrir el launcher pone al
+  día los juegos con versión nueva, sin preguntar. En Android, además, lo revisa cada ~6 h en segundo plano (con wifi si
+  está marcado «Solo con wifi») y avisa con una notificación. En Android 12+ los juegos que instaló el launcher se
+  actualizan sin pedir confirmación; los instalados de otra forma la piden una sola vez. Después enseña una ventana
+  con todo lo que cambió en cada juego actualizado (también si fue en segundo plano). El launcher también se actualiza solo.
 - **Windows:** «Acceso directo» crea en el escritorio un icono que abre ese juego sin pasar por la lista.
 - **El launcher se actualiza a sí mismo:** avisa al abrirlo y abajo está «Buscar actualización del launcher», con su
   versión, la nueva y sus novedades.

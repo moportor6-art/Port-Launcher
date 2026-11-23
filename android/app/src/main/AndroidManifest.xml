@@ -11,6 +11,12 @@
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Actualizar los juegos sin preguntar (Android 12+, juegos que instaló el launcher), como la Play Store -->
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
+    <!-- Revisión periódica en segundo plano aunque se reinicie el teléfono -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Avisar cuando un juego se actualizó en segundo plano -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
@@ -29,5 +35,9 @@
             </intent-filter>
         </activity>
         <receiver android:name=".InstallReceiver" android:exported="false" />
+        <service
+            android:name=".AutoActualizador"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
     </application>
 </manifest>

@@ -41,16 +41,10 @@ public class MainActivity extends Activity {
     static volatile MainActivity actual;
 
     private WebView web;
+    /** ¿Se ve el launcher? (las actualizaciones en segundo plano esperan y los avisos van por notificación) */
+    static volatile boolean visible;
     /** Descargas en curso: id del juego → conexión (para poder cancelar). */
-    private final Map<String, Trabajo> trabajos = new ConcurrentHashMap<>();
-    /** Sesión del instalador de Android → id del juego. */
-    static final Map<Integer, String> sesiones = new ConcurrentHashMap<>();
-
-    static class Trabajo {
-        volatile boolean cancelado;
-        volatile HttpURLConnection con;
-        volatile PackageInstaller.Session sesion;
-    }
+    private final Map<String, Instalador.Trabajo> trabajos = new ConcurrentHashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +76,7 @@ public class MainActivity extends Activity {
         setContentView(web);
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
         else web.loadUrl(START_URL);
+        AutoActualizador.programar(this);
     }
 
     @Override
@@ -91,8 +86,15 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onPause() {
+        visible = false;
+        super.onPause();
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
+        visible = true;
         js("window.Launcher&&Launcher.refrescar()");   // al volver de instalar, desinstalar o de un juego
     }
 
@@ -119,67 +121,24 @@ public class MainActivity extends Activity {
     }
 
     /** La respuesta del instalador de Android (InstallReceiver). */
-    static void resultado(int sesion, boolean ok, String msg) {
-        String id = sesiones.remove(sesion);
+    static void resultado(Instalador.Info info, boolean ok, String msg) {
         MainActivity a = actual;
-        if (id != null && a != null) a.fin(id, ok, msg);
+        if (info != null && a != null) {
+            if (info.fondo) a.js("window.Launcher&&Launcher.refrescar()");
+            else a.fin(info.id, ok, msg);
+        }
     }
 
-    /** Baja la APK directamente dentro de una sesión del instalador (sin archivo temporal) y la instala. */
-    private void instalar(String id, String url, long tamano, String nombre) {
-        Trabajo t = new Trabajo();
+    private void instalar(String id, String url, long tamano, String nombre, String tag) {
+        Instalador.Trabajo t = new Instalador.Trabajo();
         if (trabajos.putIfAbsent(id, t) != null) return;
         runOnUiThread(() -> getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON));
-        new Thread(() -> {
-            PackageInstaller pi = getPackageManager().getPackageInstaller();
-            int sid = -1;
-            try {
-                HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-                t.con = c;
-                c.setConnectTimeout(20000);
-                c.setReadTimeout(60000);
-                c.setInstanceFollowRedirects(true);
-                c.setRequestProperty("User-Agent", "PortLauncher");
-                if (c.getResponseCode() / 100 != 2) throw new Exception("GitHub respondió " + c.getResponseCode());
-                long total = c.getContentLengthLong() > 0 ? c.getContentLengthLong() : tamano;
-                PackageInstaller.SessionParams sp = new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
-                sp.setAppLabel(nombre);
-                if (total > 0) sp.setSize(total);
-                if (Build.VERSION.SDK_INT >= 31) sp.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED);
-                sid = pi.createSession(sp);
-                t.sesion = pi.openSession(sid);
-                long hecho = 0, ultimo = 0;
-                try (InputStream in = c.getInputStream(); OutputStream out = t.sesion.openWrite("app.apk", 0, total > 0 ? total : -1)) {
-                    byte[] b = new byte[256 * 1024];
-                    int n;
-                    while ((n = in.read(b)) > 0) {
-                        if (t.cancelado) throw new InterruptedException();
-                        out.write(b, 0, n);
-                        hecho += n;
-                        long ahora = System.currentTimeMillis();
-                        if (ahora - ultimo > 250) { ultimo = ahora; progreso(id, hecho, total, "Descargando"); }
-                    }
-                    t.sesion.fsync(out);
-                }
-                if (t.cancelado) throw new InterruptedException();
-                progreso(id, total, total, "Instalando: confirma en la ventana de Android");
-                sesiones.put(sid, id);
-                Intent cb = new Intent(this, InstallReceiver.class);
-                int fl = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0);
-                t.sesion.commit(PendingIntent.getBroadcast(this, sid, cb, fl).getIntentSender());
-                t.sesion.close();
-            } catch (InterruptedException e) {
-                abandonar(pi, sid, t);
-                fin(id, false, "");
-            } catch (Exception e) {
-                abandonar(pi, sid, t);
-                fin(id, false, t.cancelado ? "" : "No se pudo descargar " + nombre + ": " + e.getMessage());
+        new Thread(() -> Instalador.instalar(this, id, url, tamano, nombre, tag, false, t, new Instalador.Oyente() {
+            @Override public void progreso(String i, long h, long tot, String txt) {
+                MainActivity.this.progreso(i, h, tot, "Instalando".equals(txt) ? "Instalando…" : txt);
             }
-        }, "descarga-" + id).start();
-    }
-
-    private static void abandonar(PackageInstaller pi, int sid, Trabajo t) {
-        try { if (t.sesion != null) t.sesion.abandon(); else if (sid >= 0) pi.abandonSession(sid); } catch (Exception ignored) { }
+            @Override public void error(String i, String msg) { MainActivity.this.fin(i, false, msg); }
+        }), "descarga-" + id).start();
     }
 
     /** window.LauncherAndroid */
@@ -211,11 +170,54 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface public void instalar(String id, String url, long tamano, String nombre) {
-            MainActivity.this.instalar(id, url, tamano, nombre);
+            MainActivity.this.instalar(id, url, tamano, nombre, null);
+        }
+
+        @JavascriptInterface public void instalarVersion(String id, String url, long tamano, String nombre, String tag) {
+            MainActivity.this.instalar(id, url, tamano, nombre, tag);
+        }
+
+        /** Ajustes de la pantalla (auto, soloWifi) → para las actualizaciones en segundo plano. */
+        @JavascriptInterface public void ajustes(String json) {
+            try {
+                JSONObject o = new JSONObject(json);
+                AutoActualizador.prefs(MainActivity.this).edit()
+                        .putBoolean("auto", o.optBoolean("auto", true))
+                        .putBoolean("soloWifi", o.optBoolean("soloWifi", true)).apply();
+                AutoActualizador.programar(MainActivity.this);
+            } catch (Exception ignored) {
+            }
+        }
+
+        @JavascriptInterface public void guardarCatalogo(String juegosJson) {
+            AutoActualizador.prefs(MainActivity.this).edit().putString("catalogo", juegosJson).apply();
+        }
+
+        @JavascriptInterface public boolean avisosPermitidos() { return Avisos.permitidos(MainActivity.this); }
+
+        @JavascriptInterface public void pedirAvisos() {
+            if (Build.VERSION.SDK_INT >= 33)
+                runOnUiThread(() -> requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 7));
+        }
+
+        /** ¿Puede actualizarlo sin preguntar? (Android 12+ y lo instaló el launcher) */
+        @JavascriptInterface public boolean sinPreguntar(String paquete) {
+            if (Build.VERSION.SDK_INT < 31) return false;
+            try {
+                String de = getPackageManager().getInstallSourceInfo(paquete).getInstallingPackageName();
+                return getPackageName().equals(de);
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        @JavascriptInterface public boolean conWifi() {
+            android.net.ConnectivityManager cm = getSystemService(android.net.ConnectivityManager.class);
+            return cm == null || !cm.isActiveNetworkMetered();
         }
 
         @JavascriptInterface public void cancelar(String id) {
-            Trabajo t = trabajos.get(id);
+            Instalador.Trabajo t = trabajos.get(id);
             if (t == null) return;
             t.cancelado = true;
             HttpURLConnection c = t.con;

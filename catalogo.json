@@ -74,25 +74,9 @@
       }
     },
     {
-      "id": "pokebonk",
-      "nombre": "PokéBonk",
-      "desc": "Survivor 3D Pokémon al estilo Megabonk, con todos los extras.",
-      "repo": "moportor6-art/moportor6-art-PokeBonk",
-      "android": {
-        "paquete": "com.moportor6.pokebonk",
-        "apk": "^PokeBonk\\.apk$",
-        "version": "codigo"
-      },
-      "windows": {
-        "tipo": "zip",
-        "zip": "^PokeBonk-Windows-[0-9.]+\\.zip$",
-        "exe": "PokeBonk.exe"
-      }
-    },
-    {
       "id": "pokebonk-lite",
       "nombre": "PokéBonk Lite",
-      "desc": "PokéBonk más ligero: el mismo juego sin los extras, ocupa bastante menos.",
+      "desc": "Survivor 3D Pokémon al estilo Megabonk. La versión ligera: los otros juegos ya están en el launcher.",
       "repo": "moportor6-art/moportor6-art-PokeBonk",
       "icono": "pokebonk",
       "android": {

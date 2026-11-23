@@ -55,7 +55,8 @@ const Host = (() => {
       instalar: async (j, rel) => {
         const asset = buscarAsset(rel, j.android.apk);
         if (!asset) throw new Error("La versión publicada no trae APK");
-        a.instalar(j.id, asset.browser_download_url, asset.size, j.nombre);
+        if (a.instalarVersion) a.instalarVersion(j.id, asset.browser_download_url, asset.size, j.nombre, rel.tag);
+        else a.instalar(j.id, asset.browser_download_url, asset.size, j.nombre);
       },
       abrir: async (j) => { if (!a.abrir(j.android.paquete)) throw new Error("No se pudo abrir"); },
       desinstalar: async (j) => a.desinstalar(j.android.paquete),
@@ -66,6 +67,12 @@ const Host = (() => {
       },
       puedeInstalar: () => a.puedeInstalar(),
       pedirPermiso: () => a.pedirPermiso(),
+      avisosPermitidos: () => (a.avisosPermitidos ? a.avisosPermitidos() : true),
+      pedirAvisos: () => a.pedirAvisos && a.pedirAvisos(),
+      sinPreguntar: (j) => (a.sinPreguntar ? a.sinPreguntar(j.android.paquete) : false),
+      conWifi: () => (a.conWifi ? a.conWifi() : true),
+      ajustes: (o) => a.ajustes && a.ajustes(JSON.stringify(o)),
+      guardarCatalogo: (juegos) => a.guardarCatalogo && a.guardarCatalogo(JSON.stringify(juegos)),
       onEvento: (cb) => cbs.push(cb),
     };
   }
@@ -88,6 +95,12 @@ const trabajos = {};    // id -> { hecho, total, texto }
 const esperas = {};
 const saltar = new Set();   // quitados de la cola de «Actualizar todo»     // id -> resolver de la promesa de instalar (para «Actualizar todo»)
 let sinRed = false;
+
+const AJUSTES = Object.assign({ auto: true, soloWifi: true }, guardado("ajustes") || {});
+function guardarAjustes() {
+  guardar("ajustes", AJUSTES);
+  if (Host.ajustes) Host.ajustes(AJUSTES);
+}
 
 function buscarAsset(rel, patron) {
   if (!rel || !rel.assets) return null;
@@ -210,8 +223,11 @@ async function refrescar(forzar) {
     const res = await Promise.all(repos.map((r) => versiones(r, forzar)));
     repos.forEach((r, i) => (releases[r] = res[i]));
     estado = await Host.estado(catalogo);
+    if (Host.guardarCatalogo) Host.guardarCatalogo(catalogo);
     pintar();
     revisarLauncher(forzar, false);
+    mostrarActualizados();
+    autoActualizar();
   } finally {
     btn.classList.remove("girando");
     document.getElementById("aviso-red").hidden = !sinRed;
@@ -310,7 +326,7 @@ function pintarEstado(el, j) {
 
   if (st.instalado) {
     boton(acc, "Jugar", "", () => accion(j, () => Host.abrir(j)));
-    if (nueva) boton(acc, "Actualizar", "nueva", () => verNovedades(j, true));
+    if (nueva) boton(acc, "Actualizar", "nueva", () => instalar(j, rel));
     if (rel) boton(acc, "Novedades", "sec", () => verNovedades(j, false));
     if (Host.plataforma === "windows") {
       boton(acc, "Acceso directo", "sec", () => accion(j, async () => { await Host.acceso(j); avisoCorto(`Acceso directo de ${j.nombre} en el escritorio.`); }));
@@ -387,14 +403,9 @@ async function instalar(j, rel, sinPreguntar) {
 }
 
 async function actualizarTodo() {
+  if (cola) return;
   const pend = catalogo.filter((j) => soporta(j) && hayNueva(j) && !trabajos[j.id]);
   if (!pend.length) return;
-  const total = pend.reduce((a, j) => a + tamano(j, releases[j.repo]), 0);
-  const ok = await preguntar("Actualizar todo",
-    `Se actualizarán: ${pend.map((j) => j.nombre).join(", ")}` + (total ? ` (unos ${mb(total)} en total).` : ".") +
-    (Host.plataforma === "android" ? "\n\nVan uno detrás de otro; Android te pedirá confirmar cada instalación." : ""),
-    "Actualizar todo");
-  if (!ok) return;
   const btn = document.getElementById("todo");
   btn.disabled = true;
   // Todos «en cola» desde el principio, para que se vea el avance
@@ -413,6 +424,7 @@ async function actualizarTodo() {
     cola = null;
     btn.disabled = false;
     pintarCabecera();
+    mostrarActualizados();
   }
 }
 
@@ -428,11 +440,12 @@ Host.onEvento(async (ev) => {
     estado = await Host.estado(catalogo);
     if (ev.id === "_launcher") return finLauncher(ev);
     repintar(ev.id);
-    if (ev.ok) avisoCorto(`${(catalogo.find((x) => x.id === ev.id) || {}).nombre || "Juego"} listo.`);
+    if (ev.ok && !cola) mostrarActualizados();
   } else if (ev.tipo === "refrescar") {
     estado = await Host.estado(catalogo);
     pintar();
     revisarPermiso();
+    if (!cola) mostrarActualizados();
   }
 });
 
@@ -524,8 +537,79 @@ function verNovedades(j, paraActualizar) {
   abrirModal({ titulo: j.nombre + (paraActualizar ? " · actualizar" : " · novedades"), sub, cuerpo: cuerpo + pie, botones });
 }
 
+// ---------- Actualizaciones automáticas ----------
+/** Como la Play Store: al abrir, pone al día lo que tenga versión nueva (con wifi si así está ajustado). */
+let autoHecho = false;
+function autoActualizar() {
+  if (autoHecho || !AJUSTES.auto || Host.plataforma === "web" || cola) return;
+  if (Host.plataforma === "android" && AJUSTES.soloWifi && Host.conWifi && !Host.conWifi()) return;
+  if (Host.plataforma === "android" && !Host.puedeInstalar()) return;
+  const pend = catalogo.filter((j) => soporta(j) && hayNueva(j) && !trabajos[j.id]);
+  if (!pend.length) return;
+  autoHecho = true;
+  actualizarTodo();
+}
+
+/** Tras actualizar (aquí o en segundo plano): ventana con lo que cambió en cada juego. */
+function mostrarActualizados() {
+  if (cola || (modal.open && !modal.dataset.actualizados)) return;
+  const partes = [];
+  for (const j of catalogo) {
+    const st = estado[j.id];
+    if (!st || !st.instalado || !soporta(j)) continue;
+    const clave = "visto:" + Host.plataforma + ":" + j.id;
+    const ahora = claveInstalada(j, st);
+    const antes = guardado(clave);
+    guardar(clave, { k: ahora, v: versionVisible(j, st) });
+    if (!antes || compara(ahora, antes.k) <= 0) continue;
+    const rel = releases[j.repo];
+    const hist = (rel && rel.historial) || [];
+    const cambios = hist.filter((h) => compara(claveTag(j, h.tag), antes.k) > 0 && compara(claveTag(j, h.tag), ahora) <= 0);
+    partes.push(`<section class="nota-ver"><h3>${esc(j.nombre)} <span>${esc(antes.v)} → ${esc(versionVisible(j, st))}</span></h3>` +
+      (cambios.length
+        ? cambios.map((h) => `<h4>${esc(h.tag)} · ${fecha(h.fecha)}</h4>${notasHtml(h.notas)}`).join("")
+        : "<p class='tenue'>Sin notas para esta versión.</p>") + "</section>");
+  }
+  if (!partes.length) return;
+  abrirModal({ titulo: partes.length === 1 ? "Juego actualizado" : `${partes.length} juegos actualizados`,
+    sub: "Esto es lo nuevo:", cuerpo: partes.join(""), botones: [], cerrar: "Genial" });
+  modal.dataset.actualizados = "1";
+  const quitar = () => { delete modal.dataset.actualizados; modal.removeEventListener("close", quitar); };
+  modal.addEventListener("close", quitar);
+}
+
+// ---------- Ajustes ----------
+function panelAjustes() {
+  const fila = (id, titulo, texto, marcado) =>
+    `<label class="aj-fila"><input type="checkbox" id="${id}"${marcado ? " checked" : ""}><span><b>${titulo}</b><br><span class="tenue">${texto}</span></span></label>`;
+  let html = fila("aj-auto", "Actualizar automáticamente",
+    Host.plataforma === "android"
+      ? "Al abrir el launcher y cada pocas horas en segundo plano, como la Play Store."
+      : "Al abrir el launcher.", AJUSTES.auto);
+  if (Host.plataforma === "android") {
+    html += fila("aj-wifi", "Solo con wifi", "Las actualizaciones automáticas esperan a tener wifi (los juegos pesan cientos de MB).", AJUSTES.soloWifi);
+    const inst = Host.puedeInstalar(), av = Host.avisosPermitidos();
+    const juegosSin = catalogo.filter((j) => estado[j.id] && estado[j.id].instalado && Host.sinPreguntar && !Host.sinPreguntar(j));
+    html += `<h4>Permisos</h4>
+      <div class="aj-perm"><span>${inst ? "✅" : "⚠️"} Instalar apps</span>${inst ? "" : '<button class="btn" id="aj-pinst">Permitir</button>'}</div>
+      <div class="aj-perm"><span>${av ? "✅" : "⚠️"} Avisos (te dice qué se actualizó)</span>${av ? "" : '<button class="btn" id="aj-pav">Permitir</button>'}</div>
+      <p class="tenue">Android 12 o más nuevo actualiza sin preguntar los juegos que instaló el launcher.` +
+      (juegosSin.length ? ` Estos los instalaste de otra forma, así que Android preguntará una sola vez al actualizarlos: ${juegosSin.map((j) => esc(j.nombre)).join(", ")}.` : "") + "</p>";
+  }
+  abrirModal({ titulo: "Ajustes", sub: "", cuerpo: html, botones: [], cerrar: "Listo" });
+  const c = modal.querySelector(".m-cuerpo");
+  c.querySelector("#aj-auto").onchange = (e) => { AJUSTES.auto = e.target.checked; guardarAjustes(); };
+  const w = c.querySelector("#aj-wifi");
+  if (w) w.onchange = (e) => { AJUSTES.soloWifi = e.target.checked; guardarAjustes(); };
+  const pi = c.querySelector("#aj-pinst");
+  if (pi) pi.onclick = () => { modal.close(); Host.pedirPermiso(); };
+  const pa = c.querySelector("#aj-pav");
+  if (pa) pa.onclick = () => { modal.close(); Host.pedirAvisos(); };
+}
+
 // ---------- Launcher ----------
 let relLauncher = null;
+let autoLauncher = false;
 
 async function revisarLauncher(forzar, mostrar) {
   const mia = await Host.version();
@@ -537,6 +621,11 @@ async function revisarLauncher(forzar, mostrar) {
   relLauncher = await versiones(LAUNCHER_REPO, forzar);
   const nueva = relLauncher && compara(numeros(String(relLauncher.tag).replace(/^v/i, "")), numeros(mia)) > 0;
   const aviso = document.getElementById("aviso-launcher");
+  if (nueva && AJUSTES.auto && !cola && !Object.keys(trabajos).length && !autoLauncher) {
+    autoLauncher = true;   // como la Play Store: el launcher también se pone al día solo
+    Host.actualizarLauncher(relLauncher);
+    return;
+  }
   if (nueva) {
     aviso.hidden = false;
     aviso.textContent = "";
@@ -586,7 +675,14 @@ function revisarPermiso() {
 
 document.getElementById("refrescar").onclick = () => refrescar(true);
 document.getElementById("todo").onclick = actualizarTodo;
+document.getElementById("ajustes").onclick = panelAjustes;
 document.getElementById("buscar-launcher").onclick = () => revisarLauncher(true, true);
 document.getElementById("dar-permiso").onclick = () => Host.pedirPermiso && Host.pedirPermiso();
 modal.addEventListener("click", (e) => { if (e.target === modal) modal.close(); });
+guardarAjustes();
 refrescar(false);
+// Primera vez en Android 13+: pedir el permiso de avisos (para saber qué se actualizó en segundo plano)
+if (Host.plataforma === "android" && Host.avisosPermitidos && !Host.avisosPermitidos() && !guardado("avisos-pedidos")) {
+  guardar("avisos-pedidos", 1);
+  setTimeout(() => Host.pedirAvisos(), 1500);
+}
