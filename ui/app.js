@@ -85,7 +85,8 @@ let catalogo = [];
 let releases = {};      // repo -> { tag, fecha, notas, assets, historial: [{tag, fecha, notas}] } o null
 let estado = {};        // id -> { instalado, version, codigo, actualizable }
 const trabajos = {};    // id -> { hecho, total, texto }
-const esperas = {};     // id -> resolver de la promesa de instalar (para «Actualizar todo»)
+const esperas = {};
+const saltar = new Set();   // quitados de la cola de «Actualizar todo»     // id -> resolver de la promesa de instalar (para «Actualizar todo»)
 let sinRed = false;
 
 function buscarAsset(rel, patron) {
@@ -253,7 +254,11 @@ function pintar() {
   pintarCabecera();
 }
 
+let cola = null;   // { i, n } mientras «Actualizar todo» trabaja
 function pintarCabecera() {
+  const b0 = document.getElementById("todo");
+  if (cola) { b0.hidden = false; b0.disabled = true; b0.textContent = `Actualizando ${cola.i} de ${cola.n}…`; return; }
+  b0.disabled = false;
   const pend = catalogo.filter((j) => soporta(j) && hayNueva(j) && !trabajos[j.id]);
   const b = document.getElementById("todo");
   b.hidden = pend.length === 0;
@@ -278,7 +283,8 @@ function pintarEstado(el, j) {
     el.querySelector(".relleno").style.width = (t.total ? Math.min(100, (100 * t.hecho) / t.total) : 0) + "%";
     el.querySelector(".barra").classList.toggle("indeterminada", !t.total);
     fase.textContent = t.texto + (t.total ? ` · ${mb(t.hecho)} de ${mb(t.total)}` : "");
-    boton(acc, "Cancelar", "sec", () => Host.cancelar(j.id));
+    if (t.texto === "En cola") boton(acc, "Quitar de la cola", "sec", () => { saltar.add(j.id); delete trabajos[j.id]; repintar(j.id); });
+    else boton(acc, "Cancelar", "sec", () => Host.cancelar(j.id));
     return;
   }
 
@@ -310,8 +316,9 @@ function pintarEstado(el, j) {
       boton(acc, "Acceso directo", "sec", () => accion(j, async () => { await Host.acceso(j); avisoCorto(`Acceso directo de ${j.nombre} en el escritorio.`); }));
       boton(acc, "Carpeta", "sec", () => Host.carpeta(j));
     }
-    boton(acc, "Desinstalar", "peligro", () => {
-      if (confirm(`¿Desinstalar ${j.nombre}?` + (Host.plataforma === "windows" ? " Tus partidas se conservan." : ""))) accion(j, () => Host.desinstalar(j));
+    boton(acc, "Desinstalar", "peligro", async () => {
+      if (await preguntar("Desinstalar", `¿Desinstalar ${j.nombre}?` + (Host.plataforma === "windows" ? " Tus partidas se conservan." : ""), "Desinstalar", "Cancelar", true))
+        accion(j, () => Host.desinstalar(j));
     });
   } else {
     const b = boton(acc, "Instalar", "", () => instalar(j, rel));
@@ -338,7 +345,7 @@ function repintar(id) {
 }
 
 async function accion(j, fn) {
-  try { await fn(); } catch (e) { alert(e.message || String(e)); }
+  try { await fn(); } catch (e) { avisar(e.message || String(e)); }
   estado = await Host.estado(catalogo);
   repintar(j.id);
 }
@@ -353,11 +360,16 @@ function avisoCorto(txt) {
 }
 
 /** Instala o actualiza; la promesa termina cuando acaba (o falla). */
-function instalar(j, rel) {
-  if (Host.plataforma === "android" && !Host.puedeInstalar()) { revisarPermiso(); return Promise.resolve(false); }
+async function instalar(j, rel, sinPreguntar) {
+  if (Host.plataforma === "android" && !Host.puedeInstalar()) {
+    revisarPermiso();
+    avisar("Antes, pulsa «Permitir» arriba para que el launcher pueda instalar apps.");
+    return false;
+  }
+  if (trabajos[j.id]) return false;
   const tam = tamano(j, rel);
-  if (tam > 150e6 && navigator.connection && navigator.connection.type === "cellular" &&
-      !confirm(`${j.nombre} ocupa ${mb(tam)}. Estás con datos móviles: ¿seguir?`)) return Promise.resolve(false);
+  if (!sinPreguntar && tam > 150e6 && navigator.connection && navigator.connection.type === "cellular" &&
+      !(await preguntar(j.nombre, `Ocupa ${mb(tam)} y estás con datos móviles. ¿Seguir?`, "Descargar"))) return false;
   trabajos[j.id] = { hecho: 0, total: tam, texto: "Empezando" };
   repintar(j.id);
   return new Promise(async (ok) => {
@@ -368,7 +380,7 @@ function instalar(j, rel) {
       delete trabajos[j.id];
       delete esperas[j.id];
       repintar(j.id);
-      alert(e.message || String(e));
+      avisar(e.message || String(e));
       ok(false);
     }
   });
@@ -378,9 +390,30 @@ async function actualizarTodo() {
   const pend = catalogo.filter((j) => soporta(j) && hayNueva(j) && !trabajos[j.id]);
   if (!pend.length) return;
   const total = pend.reduce((a, j) => a + tamano(j, releases[j.repo]), 0);
-  if (!confirm(`Se actualizarán: ${pend.map((j) => j.nombre).join(", ")}` + (total ? ` (unos ${mb(total)}).` : ".") +
-      (Host.plataforma === "android" ? "\n\nAndroid pedirá confirmar cada instalación." : ""))) return;
-  for (const j of pend) await instalar(j, releases[j.repo]);
+  const ok = await preguntar("Actualizar todo",
+    `Se actualizarán: ${pend.map((j) => j.nombre).join(", ")}` + (total ? ` (unos ${mb(total)} en total).` : ".") +
+    (Host.plataforma === "android" ? "\n\nVan uno detrás de otro; Android te pedirá confirmar cada instalación." : ""),
+    "Actualizar todo");
+  if (!ok) return;
+  const btn = document.getElementById("todo");
+  btn.disabled = true;
+  // Todos «en cola» desde el principio, para que se vea el avance
+  for (const j of pend) { trabajos[j.id] = { hecho: 0, total: 0, texto: "En cola" }; repintar(j.id); }
+  try {
+    saltar.clear();
+    cola = { i: 0, n: pend.length };
+    for (const j of pend) {
+      cola.i++;
+      if (saltar.has(j.id)) continue;
+      delete trabajos[j.id];
+      pintarCabecera();
+      await instalar(j, releases[j.repo], true);
+    }
+  } finally {
+    cola = null;
+    btn.disabled = false;
+    pintarCabecera();
+  }
 }
 
 Host.onEvento(async (ev) => {
@@ -390,7 +423,7 @@ Host.onEvento(async (ev) => {
     repintar(ev.id);
   } else if (ev.tipo === "fin") {
     delete trabajos[ev.id];
-    if (!ev.ok && ev.msg) alert(ev.msg);
+    if (!ev.ok && ev.msg) avisar(ev.msg);
     if (esperas[ev.id]) { esperas[ev.id](ev.ok); delete esperas[ev.id]; }
     estado = await Host.estado(catalogo);
     if (ev.id === "_launcher") return finLauncher(ev);
@@ -434,14 +467,32 @@ function notasHtml(txt) {
 }
 
 const modal = document.getElementById("modal");
-function abrirModal({ titulo, sub, cuerpo, botones }) {
+
+/** Pregunta con la ventana del launcher (las ventanas de confirmar del navegador no salen en el WebView de Android). */
+function preguntar(titulo, texto, si, no = "Cancelar", peligro = false) {
+  return new Promise((ok) => {
+    let respondido = false;
+    const fin = (v) => { if (!respondido) { respondido = true; ok(v); } };
+    abrirModal({ titulo, sub: "", cuerpo: `<p>${esc(texto).replace(/\n/g, "<br>")}</p>`, cerrar: no,
+      botones: [{ txt: si, clase: peligro ? "peligro" : "", fn: () => fin(true) }], alCerrar: () => fin(false) });
+  });
+}
+function avisar(texto, titulo = "Port Launcher") {
+  if (!texto) return;
+  abrirModal({ titulo, sub: "", cuerpo: `<p>${esc(texto).replace(/\n/g, "<br>")}</p>`, cerrar: "Vale", botones: [] });
+}
+let alCerrarModal = null;
+modal.addEventListener("close", () => { const f = alCerrarModal; alCerrarModal = null; if (f) f(); });
+function abrirModal({ titulo, sub, cuerpo, botones, cerrar = "Cerrar", alCerrar = null }) {
+  if (modal.open) { const f = alCerrarModal; alCerrarModal = null; modal.close(); if (f) f(); }
   modal.querySelector(".m-titulo").textContent = titulo;
   modal.querySelector(".m-sub").innerHTML = sub || "";
   modal.querySelector(".m-cuerpo").innerHTML = cuerpo;
   const acc = modal.querySelector(".m-acciones");
   acc.textContent = "";
-  for (const b of botones) boton(acc, b.txt, b.clase || "", () => { modal.close(); b.fn && b.fn(); });
-  boton(acc, "Cerrar", "sec", () => modal.close());
+  for (const b of botones) boton(acc, b.txt, b.clase || "", () => { alCerrarModal = null; modal.close(); b.fn && b.fn(); });
+  boton(acc, cerrar, "sec", () => modal.close());
+  alCerrarModal = alCerrar;
   modal.showModal();
   modal.querySelector(".m-cuerpo").scrollTop = 0;
 }

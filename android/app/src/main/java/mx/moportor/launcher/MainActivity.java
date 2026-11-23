@@ -77,6 +77,7 @@ public class MainActivity extends Activity {
                 return !HOST.equals(r.getUrl().getHost());   // nada de navegar fuera del launcher
             }
         });
+        web.setWebChromeClient(new android.webkit.WebChromeClient());   // diálogos y consola del WebView
         web.addJavascriptInterface(new Puente(), "LauncherAndroid");
         setContentView(web);
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
