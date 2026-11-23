@@ -1,0 +1,54 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Versión: la define el workflow (VERSION_NAME / VERSION_CODE) o se usa la de abajo.
+def vName = System.getenv("VERSION_NAME") ?: "0.1"
+def vCode = (System.getenv("VERSION_CODE") ?: "1") as int
+
+android {
+    namespace 'mx.moportor.launcher'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'mx.moportor.launcher'
+        minSdk 24
+        targetSdk 34
+        versionCode vCode
+        versionName vName
+    }
+
+    signingConfigs {
+        release {
+            // Llave fija del repo: cada versión nueva se instala encima de la anterior.
+            storeFile file('launcher.keystore')
+            storePassword 'portlauncher'
+            keyAlias 'launcher'
+            keyPassword 'portlauncher'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.11.0'
+}

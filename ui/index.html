@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Port Launcher</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="marca">
+      <span class="logo" aria-hidden="true">◓</span>
+      <div>
+        <h1>Port Launcher</h1>
+        <p class="sub">Los ports de moportor6, listos para jugar sin internet</p>
+      </div>
+    </div>
+    <button id="refrescar" class="btn-icono" title="Buscar versiones nuevas" aria-label="Buscar versiones nuevas">⟳</button>
+  </header>
+
+  <div id="aviso-launcher" class="aviso" hidden></div>
+  <div id="aviso-permiso" class="aviso" hidden>
+    <span>Para instalar juegos, Android pide permitir que el launcher instale apps (solo una vez).</span>
+    <button id="dar-permiso" class="btn">Permitir</button>
+  </div>
+  <div id="aviso-red" class="aviso suave" hidden>Sin conexión: puedes abrir lo que ya tienes instalado.</div>
+
+  <main id="juegos" class="rejilla" aria-live="polite"></main>
+
+  <footer class="pie">
+    <span id="ver-launcher"></span>
+    <span>Créditos a los creadores de cada juego original.</span>
+  </footer>
+
+  <template id="tpl-juego">
+    <article class="juego">
+      <img class="icono" alt="">
+      <div class="info">
+        <h2 class="nombre"></h2>
+        <p class="desc"></p>
+        <p class="meta"></p>
+        <div class="barra" hidden><div class="relleno"></div></div>
+        <p class="fase" hidden></p>
+      </div>
+      <div class="acciones"></div>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

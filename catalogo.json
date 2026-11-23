@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "juegos": [
+    {
+      "id": "pokeisaac",
+      "nombre": "PokéIsaac",
+      "desc": "Roguelike Pokémon al estilo The Binding of Isaac. Gacha, misiones y cooperativo por wifi.",
+      "repo": "moportor6-art/Pokeisaac-port",
+      "android": { "paquete": "mx.pokeisaac.port", "apk": "\\.apk$" },
+      "windows": { "tipo": "web", "apk": "\\.apk$", "dentro": "assets/www", "raw": "web", "inicio": "index.html?packs=assets/" }
+    },
+    {
+      "id": "pokedive",
+      "nombre": "PokéDive",
+      "desc": "Expediciones por rutas, refugio con edificios, raid de Arceus y eventos siempre activos.",
+      "repo": "moportor6-art/Pokedive-native-android",
+      "android": { "paquete": "mx.pokedive.port", "apk": "\\.apk$" },
+      "windows": { "tipo": "web", "apk": "\\.apk$", "dentro": "assets/www", "raw": "web", "inicio": "index.html?app=1" }
+    },
+    {
+      "id": "dbz",
+      "nombre": "DB Survivors",
+      "desc": "Survivor de Dragon Ball con fusiones, formas, Babidi y montones de guerreros.",
+      "repo": "moportor6-art/-DBZ-Survivor-Offline",
+      "android": { "paquete": "com.dbsurvivors.collection", "apk": "\\.apk$" },
+      "windows": { "tipo": "web", "apk": "\\.apk$", "dentro": "assets/www/dbzsurvivor", "raw": "app/src/main/assets/www/dbzsurvivor", "inicio": "index.html" }
+    },
+    {
+      "id": "pokesurvivor",
+      "nombre": "PokéSurvivor",
+      "desc": "El survivor Pokémon de siempre, completo y sin internet.",
+      "repo": "moportor6-art/Pokesurvivor",
+      "android": { "paquete": "com.moportor6.pokesurvivor", "apk": "\\.apk$" },
+      "windows": { "tipo": "web", "apk": "\\.apk$", "dentro": "assets/www", "raw": "app/src/main/assets/www", "inicio": "index.html" }
+    },
+    {
+      "id": "pokebonk",
+      "nombre": "PokéBonk",
+      "desc": "Survivor 3D Pokémon al estilo Megabonk, con todos los extras.",
+      "repo": "moportor6-art/moportor6-art-PokeBonk",
+      "android": { "paquete": "com.moportor6.pokebonk", "apk": "^PokeBonk\\.apk$" },
+      "windows": { "tipo": "zip", "zip": "^PokeBonk-Windows-[0-9.]+\\.zip$", "exe": "PokeBonk.exe" }
+    },
+    {
+      "id": "pokebonk-lite",
+      "nombre": "PokéBonk Lite",
+      "desc": "PokéBonk más ligero: el mismo juego sin los extras, ocupa bastante menos.",
+      "repo": "moportor6-art/moportor6-art-PokeBonk",
+      "icono": "pokebonk",
+      "android": { "paquete": "com.moportor6.pokebonk.lite", "apk": "^PokeBonk-Lite\\.apk$" },
+      "windows": { "tipo": "zip", "zip": "^PokeBonk-Lite-Windows-[0-9.]+\\.zip$", "exe": "PokeBonk Lite.exe" }
+    },
+    {
+      "id": "overlord",
+      "nombre": "Pokémon Overlord",
+      "desc": "Pokémon Overlord, hecho en Godot y adaptado al móvil.",
+      "repo": "moportor6-art/Pok-mon-overlord-Port-android",
+      "android": { "paquete": "com.moportor6.pokemonoverlord", "apk": "\\.apk$" },
+      "windows": null
+    }
+  ]
+}

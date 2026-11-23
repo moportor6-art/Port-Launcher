@@ -1,0 +1,70 @@
+[hidden] { display: none !important; }
+:root {
+  --fondo: #12101c;
+  --tarjeta: #1d1a2c;
+  --borde: #2e2944;
+  --texto: #f1eefb;
+  --tenue: #a49fbd;
+  --acento: #ffcb3d;
+  --acento-txt: #2a1f00;
+  --ok: #6fdc5a;
+  --peligro: #ff6b6b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--fondo); color: var(--texto); }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left));
+  min-height: 100vh;
+}
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 1100px; margin: 0 auto 16px; }
+.marca { display: flex; align-items: center; gap: 12px; }
+.logo { font-size: 34px; color: var(--acento); line-height: 1; }
+h1 { margin: 0; font-size: 22px; letter-spacing: .3px; }
+.sub { margin: 2px 0 0; color: var(--tenue); font-size: 13px; }
+.btn-icono {
+  width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--borde); background: var(--tarjeta);
+  color: var(--texto); font-size: 20px; cursor: pointer;
+}
+.btn-icono.girando { animation: girar 1s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
+
+.aviso {
+  max-width: 1100px; margin: 0 auto 12px; padding: 12px 14px; border-radius: 12px; background: #3a2c08;
+  border: 1px solid #6b5212; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px;
+}
+.aviso.suave { background: var(--tarjeta); border-color: var(--borde); color: var(--tenue); }
+
+.rejilla { max-width: 1100px; margin: 0 auto; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); }
+.juego {
+  display: grid; grid-template-columns: 64px 1fr; grid-template-areas: "icono info" "acciones acciones"; gap: 10px 14px;
+  background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 14px;
+}
+.icono { grid-area: icono; width: 64px; height: 64px; border-radius: 14px; image-rendering: pixelated; background: #0c0a14; }
+.info { grid-area: info; min-width: 0; }
+.nombre { margin: 0; font-size: 17px; }
+.desc { margin: 4px 0 6px; color: var(--tenue); font-size: 13px; line-height: 1.35; }
+.meta { margin: 0; font-size: 12px; color: var(--tenue); }
+.meta .instalado { color: var(--ok); font-weight: 600; }
+.meta .nueva { color: var(--acento); font-weight: 600; }
+.barra { height: 8px; border-radius: 99px; background: #0c0a14; overflow: hidden; margin-top: 8px; }
+.relleno { height: 100%; width: 0; background: var(--acento); transition: width .2s; }
+.fase { margin: 6px 0 0; font-size: 12px; color: var(--tenue); }
+.acciones { grid-area: acciones; display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 700; font-size: 14px; cursor: pointer;
+  background: var(--acento); color: var(--acento-txt);
+}
+.btn.sec { background: #2c2740; color: var(--texto); }
+.btn.peligro { background: transparent; color: var(--peligro); border: 1px solid #5a2a35; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn:focus-visible, .btn-icono:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+.nota { font-size: 12px; color: var(--tenue); align-self: center; }
+
+.pie { max-width: 1100px; margin: 20px auto 0; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; color: #6d6887; font-size: 12px; }
+
+@media (max-width: 420px) {
+  .rejilla { grid-template-columns: 1fr; }
+  h1 { font-size: 19px; }
+}

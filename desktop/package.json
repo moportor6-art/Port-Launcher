@@ -1,0 +1,39 @@
+{
+  "name": "port-launcher",
+  "productName": "Port Launcher",
+  "version": "0.1.0",
+  "description": "Launcher de los ports de moportor6 para Windows",
+  "author": "moportor6",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "ui": "node -e \"const fs=require('fs');fs.rmSync('ui',{recursive:true,force:true});fs.cpSync('../ui','ui',{recursive:true});fs.copyFileSync('../catalogo.json','ui/catalogo.json')\"",
+    "start": "npm run ui && electron ."
+  },
+  "dependencies": {
+    "yauzl": "^3.2.0"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "mx.moportor.launcher",
+    "productName": "Port Launcher",
+    "asar": true,
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "descargas.js", "ui/**", "build/icon.png", "node_modules/**"],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [{ "target": "nsis", "arch": ["x64"] }, { "target": "zip", "arch": ["x64"] }],
+      "artifactName": "Port-Launcher-Windows-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "shortcutName": "Port Launcher",
+      "artifactName": "Port-Launcher-Instalador.${ext}"
+    }
+  }
+}
