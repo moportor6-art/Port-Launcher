@@ -64,7 +64,7 @@ public class MainActivity extends Activity {
         s.setAllowContentAccess(false);
         final WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
                 .setDomain(HOST)
-                .addPathHandler("/ui/", new WebViewAssetLoader.AssetsPathHandler(this))
+                .addPathHandler("/", new WebViewAssetLoader.AssetsPathHandler(this))   // /ui/index.html → assets/ui/index.html
                 .build();
         web.setWebViewClient(new WebViewClient() {
             @Override
