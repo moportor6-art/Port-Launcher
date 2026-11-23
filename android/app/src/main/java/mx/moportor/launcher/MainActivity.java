@@ -187,7 +187,8 @@ public class MainActivity extends Activity {
             try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception e) { return "?"; }
         }
 
-        /** {paquete: {version}} de los que están instalados. */
+        /** {paquete: {version, codigo, fecha}} de los que están instalados. */
+        @SuppressWarnings("deprecation")
         @JavascriptInterface public String estado(String paquetesJson) {
             JSONObject out = new JSONObject();
             try {
@@ -197,7 +198,9 @@ public class MainActivity extends Activity {
                     String p = ps.getString(i);
                     try {
                         PackageInfo info = pm.getPackageInfo(p, 0);
-                        out.put(p, new JSONObject().put("version", info.versionName == null ? "" : info.versionName));
+                        long code = Build.VERSION.SDK_INT >= 28 ? info.getLongVersionCode() : info.versionCode;
+                        out.put(p, new JSONObject().put("version", info.versionName == null ? "" : info.versionName)
+                                .put("codigo", code).put("fecha", info.lastUpdateTime));
                     } catch (PackageManager.NameNotFoundException ignored) {
                     }
                 }

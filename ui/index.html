@@ -9,13 +9,16 @@
 <body>
   <header class="top">
     <div class="marca">
-      <span class="logo" aria-hidden="true">◓</span>
+      <img class="logo" src="iconos/launcher.png" alt="">
       <div>
         <h1>Port Launcher</h1>
         <p class="sub">Los ports de moportor6, listos para jugar sin internet</p>
       </div>
     </div>
-    <button id="refrescar" class="btn-icono" title="Buscar versiones nuevas" aria-label="Buscar versiones nuevas">⟳</button>
+    <div class="top-acc">
+      <button id="todo" class="btn nueva" hidden></button>
+      <button id="refrescar" class="btn-icono" title="Buscar versiones nuevas" aria-label="Buscar versiones nuevas">⟳</button>
+    </div>
   </header>
 
   <div id="aviso-launcher" class="aviso" hidden></div>
@@ -28,9 +31,18 @@
   <main id="juegos" class="rejilla" aria-live="polite"></main>
 
   <footer class="pie">
-    <span id="ver-launcher"></span>
+    <span><span id="ver-launcher"></span> · <button id="buscar-launcher" class="enlace">Buscar actualización del launcher</button></span>
     <span>Créditos a los creadores de cada juego original.</span>
   </footer>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <dialog id="modal">
+    <h2 class="m-titulo"></h2>
+    <p class="m-sub"></p>
+    <div class="m-cuerpo"></div>
+    <div class="m-acciones"></div>
+  </dialog>
 
   <template id="tpl-juego">
     <article class="juego">

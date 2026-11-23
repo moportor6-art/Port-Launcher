@@ -26,7 +26,14 @@ Un solo lugar para instalar y abrir los ports de moportor6, en **Android** y en 
   - PokéBonk y Pokémon Overlord: baja su ZIP de Windows, lo descomprime y abre el `.exe`. PokéBonk se actualiza solo; Overlord, desde el launcher.
   - Al desinstalar un juego web se borran sus archivos, pero no sus partidas.
 - Nada abre páginas de fuera: ni el launcher ni los juegos.
-- El launcher avisa cuando hay una versión nueva de sí mismo.
+- **Actualizaciones de los juegos:** cada tarjeta dice qué versión tienes y cuál es la nueva; «Novedades» enseña las
+  notas de todas las versiones que te faltan (las de GitHub) y desde ahí se actualiza. Arriba, «Actualizar N juegos»
+  los pone todos al día de una vez. En Android, abrir el juego también vale: su actualizador baja solo lo que cambió.
+- **Windows:** «Acceso directo» crea en el escritorio un icono que abre ese juego sin pasar por la lista.
+- **El launcher se actualiza a sí mismo:** avisa al abrirlo y abajo está «Buscar actualización del launcher», con su
+  versión, la nueva y sus novedades.
+- Icono: una Poké Ball (los ports de Pokémon) con una Esfera del Dragón de botón (DB Survivors); se genera con
+  `tools/icono.py`.
 
 ## Añadir un juego al catálogo
 
@@ -36,12 +43,14 @@ Un solo lugar para instalar y abrir los ports de moportor6, en **Android** y en 
   "nombre": "Nombre",
   "desc": "Una línea.",
   "repo": "moportor6-art/Repo",
-  "android": { "paquete": "com.ejemplo.app", "apk": "\\.apk$" },
+  "android": { "paquete": "com.ejemplo.app", "apk": "\\.apk$", "version": "nombre" },
   "windows": { "tipo": "web", "apk": "\\.apk$", "dentro": "assets/www", "raw": "web", "inicio": "index.html" }
 }
 ```
 
 - `apk` / `zip`: expresión para elegir el archivo de la versión publicada.
+- `version` (Android): `nombre` si la etiqueta (`v0.7`) es igual al versionName de la app; `codigo` si el número de la
+  etiqueta (`build-49`, `v178`) es su versionCode.
 - `dentro`: carpeta del juego dentro de la APK; `raw`: la misma carpeta en el repo (para bajar solo lo que cambia,
   con el `contenido.json` de cada versión).
 - Para un juego con su propio `.exe`: `"windows": { "tipo": "zip", "zip": "…\\.zip$", "exe": "Juego.exe" }`.

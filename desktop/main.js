@@ -84,6 +84,8 @@ function crearPrincipal() {
 
 // ---------- Estado ----------
 async function estado(juegos) {
+  // Copia del catálogo para los accesos directos (abren un juego sin pasar por la lista)
+  fsp.mkdir(DATOS(), { recursive: true }).then(() => fsp.writeFile(path.join(DATOS(), "catalogo.json"), JSON.stringify(juegos))).catch(() => {});
   const out = {};
   for (const j of juegos) {
     if (!j.windows) continue;
@@ -213,6 +215,30 @@ async function desinstalar(j) {
   await fsp.rm(dirJuego(j.id), { recursive: true, force: true });
 }
 
+/** Acceso directo en el escritorio que abre el juego directamente (Port Launcher.exe --juego=id). */
+async function acceso(j) {
+  if (process.platform !== "win32") throw new Error("Los accesos directos son solo para Windows");
+  const lnk = path.join(app.getPath("desktop"), j.nombre.replace(/[\\/:*?"<>|]/g, "") + ".lnk");
+  const zipExe = j.windows.tipo === "zip" ? path.join(dirJuego(j.id), "app", j.windows.exe) : null;
+  const ok = shell.writeShortcutLink(lnk, "create", {
+    target: process.execPath, args: `--juego=${j.id}`, description: j.nombre,
+    icon: zipExe && fs.existsSync(zipExe) ? zipExe : process.execPath, iconIndex: 0,
+  });
+  if (!ok) throw new Error("No se pudo crear el acceso directo");
+}
+
+/** --juego=id (de un acceso directo): abre ese juego. */
+async function abrirDesdeArgs(argv) {
+  const a = (argv || []).find((x) => x.startsWith("--juego="));
+  if (!a) return false;
+  const id = a.slice(8);
+  const lista = (await leerJson(path.join(DATOS(), "catalogo.json"))) || [];
+  const j = lista.find((x) => x.id === id);
+  if (!j || !j.windows) return false;
+  try { await abrir(j); } catch (e) { return false; }
+  return true;
+}
+
 async function actualizarLauncher(rel) {
   const a = buscar(rel, "Instalador\\.exe$");
   if (!a) return;
@@ -234,7 +260,12 @@ async function actualizarLauncher(rel) {
 // ---------- Arranque ----------
 const unico = app.requestSingleInstanceLock();
 if (!unico) app.quit();
-app.on("second-instance", () => { if (principal) { if (principal.isMinimized()) principal.restore(); principal.focus(); } });
+app.on("second-instance", async (e, argv) => {
+  if (await abrirDesdeArgs(argv)) return;
+  if (!principal || principal.isDestroyed()) return crearPrincipal();
+  if (principal.isMinimized()) principal.restore();
+  principal.focus();
+});
 
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
@@ -254,8 +285,13 @@ app.whenReady().then(() => {
   ipcMain.handle("cancelar", (e, id) => { const t = trabajos.get(id); if (t) t.abort(); });
   ipcMain.handle("carpeta", (e, j) => shell.openPath(dirJuego(j.id)));
   ipcMain.handle("actualizarLauncher", (e, rel) => { actualizarLauncher(rel); });
+  ipcMain.handle("acceso", (e, j) => acceso(j));
 
-  crearPrincipal();
+  // Desde un acceso directo se abre solo el juego (los de .exe se lanzan y el launcher se cierra)
+  abrirDesdeArgs(process.argv).then((ok) => {
+    if (!ok) return crearPrincipal();
+    if (BrowserWindow.getAllWindows().length === 0) app.quit();
+  });
 });
 
 app.on("window-all-closed", () => app.quit());

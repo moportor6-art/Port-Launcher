@@ -11,5 +11,6 @@ contextBridge.exposeInMainWorld("launcherHost", {
   cancelar: (id) => ipcRenderer.invoke("cancelar", id),
   carpeta: (juego) => ipcRenderer.invoke("carpeta", juego),
   actualizarLauncher: (rel) => ipcRenderer.invoke("actualizarLauncher", rel),
+  acceso: (juego) => ipcRenderer.invoke("acceso", juego),
   onEvento: (cb) => ipcRenderer.on("evento", (e, ev) => cb(ev)),
 });

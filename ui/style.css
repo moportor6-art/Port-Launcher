@@ -20,7 +20,8 @@ body {
 }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 1100px; margin: 0 auto 16px; }
 .marca { display: flex; align-items: center; gap: 12px; }
-.logo { font-size: 34px; color: var(--acento); line-height: 1; }
+.logo { width: 48px; height: 48px; border-radius: 12px; }
+.top-acc { display: flex; gap: 8px; align-items: center; }
 h1 { margin: 0; font-size: 22px; letter-spacing: .3px; }
 .sub { margin: 2px 0 0; color: var(--tenue); font-size: 13px; }
 .btn-icono {
@@ -50,13 +51,18 @@ h1 { margin: 0; font-size: 22px; letter-spacing: .3px; }
 .meta .nueva { color: var(--acento); font-weight: 600; }
 .barra { height: 8px; border-radius: 99px; background: #0c0a14; overflow: hidden; margin-top: 8px; }
 .relleno { height: 100%; width: 0; background: var(--acento); transition: width .2s; }
+.barra.indeterminada .relleno { width: 35% !important; animation: vaiven 1.2s ease-in-out infinite alternate; }
+@keyframes vaiven { from { transform: translateX(-10%); } to { transform: translateX(200%); } }
+.juego.con-nueva { border-color: #6b5212; }
 .fase { margin: 6px 0 0; font-size: 12px; color: var(--tenue); }
-.acciones { grid-area: acciones; display: flex; gap: 8px; flex-wrap: wrap; }
+.juego { grid-template-rows: auto 1fr; }
+.acciones { grid-area: acciones; display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; align-self: end; }
 .btn {
   border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 700; font-size: 14px; cursor: pointer;
   background: var(--acento); color: var(--acento-txt);
 }
 .btn.sec { background: #2c2740; color: var(--texto); }
+.btn.nueva { background: #6fdc5a; color: #0d2a08; }
 .btn.peligro { background: transparent; color: var(--peligro); border: 1px solid #5a2a35; }
 .btn:disabled { opacity: .45; cursor: default; }
 .btn:focus-visible, .btn-icono:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
@@ -65,6 +71,37 @@ h1 { margin: 0; font-size: 22px; letter-spacing: .3px; }
 .pie { max-width: 1100px; margin: 20px auto 0; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; color: #6d6887; font-size: 12px; }
 
 @media (max-width: 420px) {
+  .top { flex-wrap: wrap; }
+  .sub { font-size: 12px; }
   .rejilla { grid-template-columns: 1fr; }
   h1 { font-size: 19px; }
 }
+
+.enlace { background: none; border: 0; color: var(--acento); font: inherit; cursor: pointer; padding: 0; text-decoration: underline; }
+.toast {
+  position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+  background: #2c2740; border: 1px solid var(--borde); padding: 10px 16px; border-radius: 12px; font-size: 14px; z-index: 5;
+}
+dialog#modal {
+  width: min(640px, calc(100vw - 24px)); max-height: min(80vh, 720px); padding: 18px; border-radius: 16px;
+  border: 1px solid var(--borde); background: var(--tarjeta); color: var(--texto); display: none; flex-direction: column;
+}
+dialog#modal[open] { display: flex; }
+dialog#modal::backdrop { background: rgba(5, 4, 10, .7); }
+.m-titulo { margin: 0; font-size: 19px; }
+.m-sub { margin: 4px 0 12px; color: var(--tenue); font-size: 14px; }
+.m-sub b { color: var(--texto); }
+.m-sub b.nueva, .nueva { color: #6fdc5a; }
+.m-cuerpo { overflow-y: auto; flex: 1; min-height: 60px; padding-right: 4px; font-size: 14px; line-height: 1.45; }
+.m-cuerpo h3 { margin: 0 0 4px; font-size: 15px; color: var(--acento); }
+.m-cuerpo h3 span { color: var(--tenue); font-weight: 400; font-size: 12px; margin-left: 6px; }
+.m-cuerpo h4 { margin: 8px 0 2px; font-size: 14px; }
+.m-cuerpo p { margin: 4px 0; }
+.m-cuerpo ul { margin: 4px 0; padding-left: 20px; }
+.m-cuerpo li { margin: 2px 0; }
+.m-cuerpo code { background: #0c0a14; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+.nota-ver { padding: 10px 0; border-bottom: 1px solid var(--borde); }
+.nota-ver:last-child { border-bottom: 0; }
+.tenue { color: var(--tenue); }
+.pie-nota { font-size: 12px; margin-top: 10px; }
+.m-acciones { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 14px; }

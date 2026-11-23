@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "juegos": [
     {
       "id": "pokeisaac",
@@ -8,7 +8,8 @@
       "repo": "moportor6-art/Pokeisaac-port",
       "android": {
         "paquete": "mx.pokeisaac.port",
-        "apk": "\\.apk$"
+        "apk": "\\.apk$",
+        "version": "nombre"
       },
       "windows": {
         "tipo": "web",
@@ -25,7 +26,8 @@
       "repo": "moportor6-art/Pokedive-native-android",
       "android": {
         "paquete": "mx.pokedive.port",
-        "apk": "\\.apk$"
+        "apk": "\\.apk$",
+        "version": "nombre"
       },
       "windows": {
         "tipo": "web",
@@ -42,7 +44,8 @@
       "repo": "moportor6-art/-DBZ-Survivor-Offline",
       "android": {
         "paquete": "com.dbsurvivors.collection",
-        "apk": "\\.apk$"
+        "apk": "\\.apk$",
+        "version": "codigo"
       },
       "windows": {
         "tipo": "web",
@@ -59,7 +62,8 @@
       "repo": "moportor6-art/Pokesurvivor",
       "android": {
         "paquete": "com.moportor6.pokesurvivor",
-        "apk": "\\.apk$"
+        "apk": "\\.apk$",
+        "version": "codigo"
       },
       "windows": {
         "tipo": "web",
@@ -76,7 +80,8 @@
       "repo": "moportor6-art/moportor6-art-PokeBonk",
       "android": {
         "paquete": "com.moportor6.pokebonk",
-        "apk": "^PokeBonk\\.apk$"
+        "apk": "^PokeBonk\\.apk$",
+        "version": "codigo"
       },
       "windows": {
         "tipo": "zip",
@@ -92,7 +97,8 @@
       "icono": "pokebonk",
       "android": {
         "paquete": "com.moportor6.pokebonk.lite",
-        "apk": "^PokeBonk-Lite\\.apk$"
+        "apk": "^PokeBonk-Lite\\.apk$",
+        "version": "codigo"
       },
       "windows": {
         "tipo": "zip",
@@ -107,7 +113,8 @@
       "repo": "moportor6-art/Pok-mon-overlord-Port-android",
       "android": {
         "paquete": "com.moportor6.pokemonoverlord",
-        "apk": "\\.apk$"
+        "apk": "\\.apk$",
+        "version": "codigo"
       },
       "windows": {
         "tipo": "zip",
