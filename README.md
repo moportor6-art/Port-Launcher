@@ -9,7 +9,7 @@ Un solo lugar para instalar y abrir los ports de moportor6, en **Android** y en 
 | DB Survivors | ✅ | ✅ |
 | PokéSurvivor | ✅ | ✅ |
 | PokéBonk / PokéBonk Lite | ✅ | ✅ |
-| Pokémon Overlord | ✅ | próximamente |
+| Pokémon Overlord | ✅ | ✅ |
 
 ## Cómo funciona
 
@@ -23,7 +23,7 @@ Un solo lugar para instalar y abrir los ports de moportor6, en **Android** y en 
   - Juegos web (PokéIsaac, PokéDive, DB Survivors, PokéSurvivor): la primera vez baja la APK, que ya trae el juego
     completo, y saca de ella la carpeta del juego. En las siguientes versiones baja **solo los archivos que cambiaron**
     (con su huella SHA-256). Cada juego se abre en su ventana, con sus partidas aparte; F11 = pantalla completa.
-  - PokéBonk: baja su ZIP de Windows, lo descomprime y abre el `.exe` (se actualiza solo).
+  - PokéBonk y Pokémon Overlord: baja su ZIP de Windows, lo descomprime y abre el `.exe`. PokéBonk se actualiza solo; Overlord, desde el launcher.
   - Al desinstalar un juego web se borran sus archivos, pero no sus partidas.
 - Nada abre páginas de fuera: ni el launcher ni los juegos.
 - El launcher avisa cuando hay una versión nueva de sí mismo.

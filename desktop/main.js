@@ -88,7 +88,7 @@ async function estado(juegos) {
   for (const j of juegos) {
     if (!j.windows) continue;
     const v = await leerJson(path.join(dirJuego(j.id), "version.json"));
-    out[j.id] = v ? { instalado: true, version: v.tag, actualizable: j.windows.tipo === "web" } : { instalado: false };
+    out[j.id] = v ? { instalado: true, version: v.tag, actualizable: j.windows.tipo === "web" || !!j.windows.actualizable } : { instalado: false };
   }
   return out;
 }
