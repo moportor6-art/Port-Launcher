@@ -22,7 +22,7 @@
     "productName": "Port Launcher",
     "asar": true,
     "directories": { "output": "dist" },
-    "files": ["main.js", "preload.js", "descargas.js", "ui/**", "build/icon.png", "node_modules/**"],
+    "files": ["main.js", "preload.js", "juego-preload.js", "descargas.js", "ui/**", "build/icon.png", "node_modules/**"],
     "win": {
       "icon": "build/icon.ico",
       "target": [{ "target": "nsis", "arch": ["x64"] }, { "target": "zip", "arch": ["x64"] }],

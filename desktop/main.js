@@ -17,6 +17,13 @@ const { spawn } = require("child_process");
 const { pathToFileURL } = require("url");
 const D = require("./descargas");
 
+// Rendimiento de los juegos: la tarjeta gráfica potente en portátiles con dos GPU y aceleración aunque el driver
+// esté en la lista negra de Chromium (si no, el lienzo se dibuja con el procesador y los juegos van a tirones)
+app.commandLine.appendSwitch("force_high_performance_gpu");
+app.commandLine.appendSwitch("ignore-gpu-blocklist");
+app.commandLine.appendSwitch("enable-gpu-rasterization");
+app.commandLine.appendSwitch("enable-zero-copy");
+
 protocol.registerSchemesAsPrivileged([
   { scheme: "launcher", privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } },
   { scheme: "juego", privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } },
@@ -196,9 +203,17 @@ async function abrir(j) {
   const win = new BrowserWindow({
     width: 1280, height: 760, backgroundColor: "#000000", title: j.nombre, autoHideMenuBar: true,
     icon: path.join(__dirname, "ui", "iconos", (j.icono || j.id) + ".png"),
-    webPreferences: { contextIsolation: true, sandbox: true, autoplayPolicy: "no-user-gesture-required" },
+    webPreferences: {
+      preload: path.join(__dirname, "juego-preload.js"), contextIsolation: true, sandbox: true,
+      autoplayPolicy: "no-user-gesture-required", backgroundThrottling: false,
+    },
   });
   soloLocal(win.webContents);
+  // Pantalla completa de la ventana (Escape no la quita; F11 sí) y el juego se entera de los cambios
+  const avisar = () => { if (!win.isDestroyed()) win.webContents.send("pantalla-completa", win.isFullScreen()); };
+  win.on("enter-full-screen", avisar);
+  win.on("leave-full-screen", avisar);
+  win.webContents.on("did-finish-load", avisar);
   win.webContents.on("before-input-event", (e, inp) => {
     if (inp.type === "keyDown" && inp.key === "F11") { win.setFullScreen(!win.isFullScreen()); e.preventDefault(); }
   });
@@ -278,6 +293,10 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle("version", () => app.getVersion());
+  ipcMain.on("pantalla-completa", (e, si) => {
+    const w = BrowserWindow.fromWebContents(e.sender);
+    if (w && w !== principal && w.isFullScreen() !== si) w.setFullScreen(si);
+  });
   ipcMain.handle("estado", (e, juegos) => estado(juegos));
   ipcMain.handle("instalar", (e, j, rel) => { instalar(j, rel); });
   ipcMain.handle("abrir", (e, j) => abrir(j));

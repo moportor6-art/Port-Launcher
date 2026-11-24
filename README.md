@@ -40,6 +40,9 @@ Un solo lugar para instalar y abrir los ports de moportor6, en **Android** y en 
   estimados de cada juego y los ajustes recomendados con los nombres de su menú. Guarda las últimas 10 pruebas.
   La carga de cada juego está en `catalogo.json` → `bench` (`d2` sprites, `d3` objetos 3D, `cpu` entidades,
   `max` tope de FPS, `ajustes` por nivel `alto`/`medio`/`bajo`), así que se puede afinar sin sacar otra versión.
+- **Juegos web en Windows:** la pantalla completa del juego es la de la ventana: Escape abre el menú del juego sin
+  salir de pantalla completa (se sale con F11 o con el botón del juego). El launcher usa la tarjeta gráfica potente
+  en portátiles con dos GPU y fuerza la aceleración aunque el driver esté en la lista negra de Chromium.
 - **Windows:** «Acceso directo» crea en el escritorio un icono que abre ese juego sin pasar por la lista.
 - **El launcher se actualiza a sí mismo:** avisa al abrirlo y abajo está «Buscar actualización del launcher», con su
   versión, la nueva y sus novedades.
