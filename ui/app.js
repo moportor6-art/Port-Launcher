@@ -73,6 +73,8 @@ const Host = (() => {
       conWifi: () => (a.conWifi ? a.conWifi() : true),
       ajustes: (o) => a.ajustes && a.ajustes(JSON.stringify(o)),
       guardarCatalogo: (juegos) => a.guardarCatalogo && a.guardarCatalogo(JSON.stringify(juegos)),
+      dispositivo: () => { try { return JSON.parse(a.dispositivo()); } catch (e) { return null; } },
+      pantallaEncendida: (si) => a.pantallaEncendida && a.pantallaEncendida(si),
       onEvento: (cb) => cbs.push(cb),
     };
   }
@@ -607,6 +609,92 @@ function panelAjustes() {
   if (pa) pa.onclick = () => { modal.close(); Host.pedirAvisos(); };
 }
 
+// ---------- Benchmark ----------
+function dispositivo() {
+  const d = (Host.dispositivo && Host.dispositivo()) || {};
+  if (!d.nucleos) d.nucleos = navigator.hardwareConcurrency || 0;
+  if (!d.ram && navigator.deviceMemory) d.ram = navigator.deviceMemory * 1e9;
+  if (!d.modelo) d.modelo = Host.plataforma === "windows" ? "PC con Windows" : "Este dispositivo";
+  return d;
+}
+
+async function lanzarBench() {
+  const pant = document.getElementById("pantalla-bench");
+  const fase = document.getElementById("bench-fase"), fps = document.getElementById("bench-fps"), barra = document.getElementById("bench-barra");
+  pant.hidden = false;
+  if (Host.pantallaEncendida) Host.pantallaEncendida(true);
+  let avance = 0;
+  const ui = (txt, f, p) => {
+    fase.textContent = txt;
+    fps.textContent = f ? Math.round(f) + " FPS" : "";
+    if (p != null) avance = p; else avance = Math.min(0.97, avance + 0.01);
+    barra.style.width = Math.round(avance * 100) + "%";
+  };
+  document.getElementById("bench-cancelar").onclick = () => Bench.cancelar();
+  let r = null;
+  try {
+    await new Promise((ok) => setTimeout(ok, 300));
+    r = await Bench.correr(document.getElementById("lienzo-bench"), ui);
+  } catch (e) {
+    avisar("El benchmark falló: " + (e.message || e));
+  } finally {
+    pant.hidden = true;
+    if (Host.pantallaEncendida) Host.pantallaEncendida(false);
+  }
+  if (!r) return;
+  r.disp = dispositivo();
+  const hist = guardado("bench") || [];
+  hist.unshift(r);
+  guardar("bench", hist.slice(0, 10));
+  verBench(r);
+}
+
+function gb(n) { return n ? (n / 1073741824).toFixed(n > 4e9 ? 0 : 1) + " GB" : "?"; }
+
+function verBench(r) {
+  if (!r) {
+    abrirModal({
+      titulo: "Benchmark",
+      sub: "¿Cómo irán los juegos en este " + (Host.plataforma === "windows" ? "PC" : "teléfono") + "?",
+      cuerpo: `<p>Una prueba de unos 30 segundos: gráficos 2D (como los survivors), 3D (como PokéBonk) y procesador.
+        Después te dice a cuántos FPS irá cada juego y qué ajustes poner.</p>
+        <p class="tenue">Consejo: hazlo con el teléfono cargado de batería y sin el modo ahorro activado, que limita la velocidad.</p>`,
+      botones: [{ txt: "Empezar", fn: lanzarBench }],
+    });
+    return;
+  }
+  const d = r.disp || {};
+  const filaD = (k, v) => (v ? `<dt>${k}</dt><dd>${esc(v)}</dd>` : "");
+  const ficha = `<dl class="ficha">${filaD("Equipo", d.modelo)}${filaD("Procesador", [d.soc, d.nucleos ? d.nucleos + " núcleos" : ""].filter(Boolean).join(" · "))}` +
+    filaD("Gráficos", r.gpu) + filaD("RAM", d.ram ? gb(d.ram) + (d.ramLibre ? ` (${gb(d.ramLibre)} libres)` : "") : "") +
+    filaD("Pantalla", `${r.hz} Hz` + (d.hzMax && d.hzMax > r.hz + 2 ? ` (admite hasta ${Math.round(d.hzMax)} Hz)` : "")) +
+    filaD("Sistema", d.android ? "Android " + d.android : "") + filaD("Espacio libre", d.libre ? gb(d.libre) : "") + "</dl>";
+  const max = { d2: 6000, d3: 40000, cpu: 12000 };
+  const med = (nombre, v, m, txt) => `<div class="medidor"><span>${nombre}</span><div class="barra"><div class="relleno" style="width:${Math.min(100, Math.round(100 * Math.sqrt(v / m)))}%"></div></div><span class="tenue">${txt}</span></div>`;
+  const pruebas = med("2D", r.d2.capacidad, max.d2, Math.round(r.d2.capacidad) + " spr.") +
+    (r.d3.sinWebGL2 ? `<p class="tenue">3D: este dispositivo no tiene WebGL 2.</p>` : med("3D", r.d3.capacidad, max.d3, Math.round(r.d3.capacidad) + " obj.")) +
+    med("Procesador", r.cpu.capacidad, max.cpu, Math.round(r.cpu.capacidad) + " ent.");
+  const porDefecto = { alto: "No hace falta tocar nada.", medio: "Va bien; si notas tirones, cierra otras apps.", bajo: "Puede ir a tirones: cierra otras apps y desactiva el ahorro de batería del teléfono." };
+  const juegos = catalogo.filter((j) => soporta(j) && j.bench).map((j) => {
+    const f = Bench.estimar(r, j.bench, r.hz);
+    const n = Bench.nivel(f);
+    const rec = (j.bench.ajustes && j.bench.ajustes[n.id]) || porDefecto[n.id];
+    return `<div class="est"><b>${n.icono} ${esc(j.nombre)}</b><span class="fps">~${Math.round(f)} FPS · ${n.txt}</span>` +
+      `<span class="rec">${esc(rec)}${j.bench.aprox ? " (estimación aproximada: usa otro motor)" : ""}</span></div>`;
+  }).join("");
+  const hist = guardado("bench") || [];
+  const antes = hist.filter((h) => h.fecha !== r.fecha).slice(0, 4)
+    .map((h) => `<li>${fecha(h.fecha)} · ${h.puntos} puntos · ${esc((h.disp && h.disp.modelo) || "")}</li>`).join("");
+  abrirModal({
+    titulo: "Resultado del benchmark",
+    sub: `${fecha(r.fecha)} · <span class="puntos">${r.puntos}</span> puntos <span class="tenue">(1000 ≈ gama media)</span>`,
+    cuerpo: ficha + "<h4>Pruebas</h4>" + pruebas + "<h4>Cómo irá cada juego</h4>" + juegos +
+      (antes ? "<h4>Pruebas anteriores</h4><ul>" + antes + "</ul>" : "") +
+      "<p class='tenue pie-nota'>Son estimaciones: imitan la carga de cada juego, pero la partida real puede variar unos FPS.</p>",
+    botones: [{ txt: "Repetir", clase: "sec", fn: lanzarBench }],
+  });
+}
+
 // ---------- Launcher ----------
 let relLauncher = null;
 let autoLauncher = false;
@@ -676,6 +764,7 @@ function revisarPermiso() {
 document.getElementById("refrescar").onclick = () => refrescar(true);
 document.getElementById("todo").onclick = actualizarTodo;
 document.getElementById("ajustes").onclick = panelAjustes;
+document.getElementById("bench").onclick = () => verBench((guardado("bench") || [])[0]);
 document.getElementById("buscar-launcher").onclick = () => revisarLauncher(true, true);
 document.getElementById("dar-permiso").onclick = () => Host.pedirPermiso && Host.pedirPermiso();
 modal.addEventListener("click", (e) => { if (e.target === modal) modal.close(); });

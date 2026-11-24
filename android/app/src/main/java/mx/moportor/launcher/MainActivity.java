@@ -74,9 +74,29 @@ public class MainActivity extends Activity {
         web.setWebChromeClient(new android.webkit.WebChromeClient());   // diálogos y consola del WebView
         web.addJavascriptInterface(new Puente(), "LauncherAndroid");
         setContentView(web);
+        maxRefresco();
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
         else web.loadUrl(START_URL);
         AutoActualizador.programar(this);
+    }
+
+    /** Pide la frecuencia de pantalla más alta (sin esto muchos teléfonos dejan la app a 60 Hz y el benchmark lo vería así). */
+    @SuppressWarnings("deprecation")
+    private void maxRefresco() {
+        if (Build.VERSION.SDK_INT < 23) return;
+        try {
+            android.view.Display d = Build.VERSION.SDK_INT >= 30 ? getDisplay() : getWindowManager().getDefaultDisplay();
+            if (d == null) return;
+            android.view.Display.Mode cur = d.getMode(), best = cur;
+            for (android.view.Display.Mode m : d.getSupportedModes())
+                if (m.getPhysicalWidth() == cur.getPhysicalWidth() && m.getPhysicalHeight() == cur.getPhysicalHeight()
+                        && m.getRefreshRate() > best.getRefreshRate()) best = m;
+            WindowManager.LayoutParams lp = getWindow().getAttributes();
+            lp.preferredDisplayModeId = best.getModeId();
+            lp.preferredRefreshRate = best.getRefreshRate();
+            getWindow().setAttributes(lp);
+        } catch (Exception ignored) {
+        }
     }
 
     @Override
@@ -209,6 +229,40 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return false;
             }
+        }
+
+        /** Ficha del teléfono para el benchmark. */
+        @JavascriptInterface @SuppressWarnings("deprecation") public String dispositivo() {
+            JSONObject o = new JSONObject();
+            try {
+                String fab = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER;
+                String mod = Build.MODEL == null ? "" : Build.MODEL;
+                o.put("modelo", mod.toLowerCase().startsWith(fab.toLowerCase()) ? mod : (fab.isEmpty() ? mod : Character.toUpperCase(fab.charAt(0)) + fab.substring(1) + " " + mod));
+                String soc = Build.VERSION.SDK_INT >= 31 ? (Build.SOC_MANUFACTURER + " " + Build.SOC_MODEL).trim() : Build.HARDWARE;
+                o.put("soc", soc);
+                o.put("nucleos", Runtime.getRuntime().availableProcessors());
+                android.app.ActivityManager am = getSystemService(android.app.ActivityManager.class);
+                android.app.ActivityManager.MemoryInfo mi = new android.app.ActivityManager.MemoryInfo();
+                am.getMemoryInfo(mi);
+                o.put("ram", mi.totalMem).put("ramLibre", mi.availMem).put("ramBaja", am.isLowRamDevice());
+                o.put("android", Build.VERSION.RELEASE).put("sdk", Build.VERSION.SDK_INT);
+                android.view.Display d = Build.VERSION.SDK_INT >= 30 ? getDisplay() : getWindowManager().getDefaultDisplay();
+                if (d != null) {
+                    float max = d.getRefreshRate();
+                    if (Build.VERSION.SDK_INT >= 23) for (android.view.Display.Mode m : d.getSupportedModes()) max = Math.max(max, m.getRefreshRate());
+                    o.put("hz", d.getRefreshRate()).put("hzMax", max);
+                }
+                o.put("libre", new android.os.StatFs(getFilesDir().getAbsolutePath()).getAvailableBytes());
+            } catch (Exception ignored) {
+            }
+            return o.toString();
+        }
+
+        @JavascriptInterface public void pantallaEncendida(boolean si) {
+            runOnUiThread(() -> {
+                if (si) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                else if (trabajos.isEmpty()) getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            });
         }
 
         @JavascriptInterface public boolean conWifi() {

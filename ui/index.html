@@ -17,6 +17,7 @@
     </div>
     <div class="top-acc">
       <button id="todo" class="btn nueva" hidden></button>
+      <button id="bench" class="btn-icono" title="Benchmark: ¿cómo irán los juegos?" aria-label="Benchmark">⚡</button>
       <button id="ajustes" class="btn-icono" title="Ajustes" aria-label="Ajustes">⚙</button>
       <button id="refrescar" class="btn-icono" title="Buscar versiones nuevas" aria-label="Buscar versiones nuevas">⟳</button>
     </div>
@@ -37,6 +38,15 @@
   </footer>
 
   <div id="toast" class="toast" role="status" hidden></div>
+
+  <div id="pantalla-bench" class="bench" hidden>
+    <canvas id="lienzo-bench"></canvas>
+    <div class="bench-hud">
+      <div class="bench-txt"><b id="bench-fase">Preparando…</b><span id="bench-fps"></span></div>
+      <div class="barra"><div class="relleno" id="bench-barra"></div></div>
+      <button id="bench-cancelar" class="btn sec">Cancelar</button>
+    </div>
+  </div>
 
   <dialog id="modal">
     <h2 class="m-titulo"></h2>
@@ -59,6 +69,7 @@
     </article>
   </template>
 
+  <script src="bench.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

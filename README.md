@@ -34,6 +34,12 @@ Un solo lugar para instalar y abrir los ports de moportor6, en **Android** y en 
   está marcado «Solo con wifi») y avisa con una notificación. En Android 12+ los juegos que instaló el launcher se
   actualizan sin pedir confirmación; los instalados de otra forma la piden una sola vez. Después enseña una ventana
   con todo lo que cambió en cada juego actualizado (también si fue en segundo plano). El launcher también se actualiza solo.
+- **Benchmark (⚡):** unos 30 s de pruebas en el mismo motor que usan los juegos: pantalla (Hz reales), 2D (sprites
+  como un survivor), 3D (WebGL, como PokéBonk) y procesador (enemigos con colisiones). Enseña la ficha del teléfono
+  (modelo, procesador, GPU, RAM, pantalla, Android, espacio libre), una puntuación (1000 ≈ gama media), los FPS
+  estimados de cada juego y los ajustes recomendados con los nombres de su menú. Guarda las últimas 10 pruebas.
+  La carga de cada juego está en `catalogo.json` → `bench` (`d2` sprites, `d3` objetos 3D, `cpu` entidades,
+  `max` tope de FPS, `ajustes` por nivel `alto`/`medio`/`bajo`), así que se puede afinar sin sacar otra versión.
 - **Windows:** «Acceso directo» crea en el escritorio un icono que abre ese juego sin pasar por la lista.
 - **El launcher se actualiza a sí mismo:** avisa al abrirlo y abajo está «Buscar actualización del launcher», con su
   versión, la nueva y sus novedades.

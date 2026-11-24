@@ -17,6 +17,15 @@
         "dentro": "assets/www",
         "raw": "web",
         "inicio": "index.html?packs=assets/"
+      },
+      "bench": {
+        "d2": 350,
+        "cpu": 400,
+        "ajustes": {
+          "alto": "Opciones → Gráficos: Rendimiento AUTO y Límite de FPS SIN LÍMITE.",
+          "medio": "Opciones → Gráficos: Rendimiento AUTO y Límite de FPS 60 FPS.",
+          "bajo": "Opciones → Gráficos: Rendimiento AHORRO y Límite de FPS 30 FPS."
+        }
       }
     },
     {
@@ -35,6 +44,10 @@
         "dentro": "assets/www",
         "raw": "web",
         "inicio": "index.html?app=1"
+      },
+      "bench": {
+        "d2": 400,
+        "cpu": 400
       }
     },
     {
@@ -53,6 +66,10 @@
         "dentro": "assets/www/dbzsurvivor",
         "raw": "app/src/main/assets/www/dbzsurvivor",
         "inicio": "index.html"
+      },
+      "bench": {
+        "d2": 900,
+        "cpu": 900
       }
     },
     {
@@ -71,6 +88,10 @@
         "dentro": "assets/www",
         "raw": "app/src/main/assets/www",
         "inicio": "index.html"
+      },
+      "bench": {
+        "d2": 900,
+        "cpu": 900
       }
     },
     {
@@ -88,6 +109,15 @@
         "tipo": "zip",
         "zip": "^PokeBonk-Lite-Windows-[0-9.]+\\.zip$",
         "exe": "PokeBonk Lite.exe"
+      },
+      "bench": {
+        "d3": 9000,
+        "cpu": 700,
+        "ajustes": {
+          "alto": "Ajustes → Gráficos → Calidad gráfica: Alta.",
+          "medio": "Ajustes → Gráficos → Calidad gráfica: Media y Modo rendimiento: Auto.",
+          "bajo": "Ajustes → Gráficos → Calidad gráfica: Baja y Modo rendimiento: Siempre."
+        }
       }
     },
     {
@@ -105,6 +135,12 @@
         "zip": "^PokemonOverlord-Windows\\.zip$",
         "exe": "PokemonOverlord.exe",
         "actualizable": true
+      },
+      "bench": {
+        "d2": 300,
+        "cpu": 300,
+        "max": 60,
+        "aprox": true
       }
     }
   ]
