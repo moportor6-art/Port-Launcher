@@ -95,6 +95,28 @@
       }
     },
     {
+      "id": "opsurvivor",
+      "nombre": "One Piece Survivor",
+      "desc": "Survivor pirata de One Piece: 10 Sombreros de Paja, 13 islas de la saga, Gears y Haki.",
+      "repo": "moportor6-art/OnePiece-Survivor-Port",
+      "android": {
+        "paquete": "com.moportor6.opsurvivor",
+        "apk": "\\.apk$",
+        "version": "codigo"
+      },
+      "windows": {
+        "tipo": "web",
+        "apk": "\\.apk$",
+        "dentro": "assets/www",
+        "raw": "app/src/main/assets/www",
+        "inicio": "index.html"
+      },
+      "bench": {
+        "d2": 700,
+        "cpu": 700
+      }
+    },
+    {
       "id": "pokebonk-lite",
       "nombre": "PokéBonk Lite",
       "desc": "Survivor 3D Pokémon al estilo Megabonk. La versión ligera: los otros juegos ya están en el launcher.",

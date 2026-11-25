@@ -8,6 +8,7 @@ Un solo lugar para instalar y abrir los ports de moportor6, en **Android** y en 
 | PokéDive | ✅ | ✅ |
 | DB Survivors | ✅ | ✅ |
 | PokéSurvivor | ✅ | ✅ |
+| One Piece Survivor | ✅ | ✅ |
 | PokéBonk Lite | ✅ | ✅ |
 | Pokémon Overlord | ✅ | ✅ |
 
@@ -20,7 +21,7 @@ Un solo lugar para instalar y abrir los ports de moportor6, en **Android** y en 
   confirmar cada instalación y, la primera vez, permitir que el launcher instale apps. Después cada port se actualiza
   solo con su propio actualizador.
 - **Windows:**
-  - Juegos web (PokéIsaac, PokéDive, DB Survivors, PokéSurvivor): la primera vez baja la APK, que ya trae el juego
+  - Juegos web (PokéIsaac, PokéDive, DB Survivors, PokéSurvivor, One Piece Survivor): la primera vez baja la APK, que ya trae el juego
     completo, y saca de ella la carpeta del juego. En las siguientes versiones baja **solo los archivos que cambiaron**
     (con su huella SHA-256). Cada juego se abre en su ventana, con sus partidas aparte; F11 = pantalla completa.
   - PokéBonk y Pokémon Overlord: baja su ZIP de Windows, lo descomprime y abre el `.exe`. PokéBonk se actualiza solo; Overlord, desde el launcher.
